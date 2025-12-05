@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Monitor Argentina - Personalizable</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --clock-color: #38bdf8;
+            --up-color: #4ade80;
+            --down-color: #f87171;
+            --input-bg: #334155;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- RELOJ --- */
+        .clock-container {
+            text-align: center;
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 15px 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            min-width: 300px;
+        }
+
+        .time {
+            font-size: 3rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--clock-color);
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .milliseconds { font-size: 1.2rem; color: var(--text-secondary); }
+
+        /* --- GRID PRINCIPAL --- */
+        .crypto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            min-height: 250px;
+            position: relative;
+        }
+
+        /* Cabecera de Tarjeta con Selector */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+
+        /* Estilo de los Selectores (Dropdowns) */
+        select.coin-selector {
+            background: var(--input-bg);
+            color: white;
+            border: 1px solid #475569;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            width: 60%;
+            text-transform: uppercase;
+        }
+        select.coin-selector:hover { border-color: var(--clock-color); }
+        
+        .trend-badge {
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            min-width: 80px;
+            text-align: center;
+        }
+        .trend-up { color: var(--up-color); border: 1px solid var(--up-color); }
+        .trend-down { color: var(--down-color); border: 1px solid var(--down-color); }
+        .trend-neutral { color: var(--text-secondary); border: 1px solid var(--text-secondary); }
+
+        /* Filas de Precios */
+        .exchange-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .exchange-name {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .price-group { text-align: right; }
+        .price-usd { font-size: 0.8rem; color: #4ade80; }
+        .price-ars { font-size: 1rem; font-weight: bold; color: var(--text-primary); }
+
+        /* Caja Satoshi (Solo visible para BTC) */
+        .satoshi-box {
+            margin-top: auto;
+            padding: 10px;
+            background: rgba(247, 147, 26, 0.1);
+            border: 1px solid rgba(247, 147, 26, 0.3);
+            border-radius: 10px;
+            text-align: center;
+            display: none; /* Oculto por defecto */
+        }
+        .satoshi-box.visible { display: block; animation: fadeIn 0.5s; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .satoshi-title { color: #f7931a; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+        .satoshi-values { font-size: 0.9rem; font-weight: bold; margin-top: 5px; }
+
+        /* --- CALCULADORA --- */
+        .calculator-section {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+        }
+
+        .calc-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .calc-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .calc-input {
+            background: var(--input-bg);
+            border: 1px solid #475569;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            outline: none;
+            width: 150px;
+        }
+
+        .calc-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .result-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .res-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px; }
+        .res-value { font-size: 1.5rem; font-weight: bold; }
+        .res-usd { color: #4ade80; }
+        .res-ars { color: #fff; }
+
+        .loader { color: var(--text-secondary); font-size: 0.8rem; font-style: italic; padding: 10px;}
+
+        @media (max-width: 600px) {
+            .time { font-size: 2.2rem; }
+            .calc-controls { flex-direction: column; align-items: stretch; }
+            .calc-input, select.coin-selector { width: 100%; box-sizing: border-box; }
+            .calc-results { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- RELOJ -->
+    <div class="clock-container">
+        <div id="clock" class="time">00:00:00<span id="millis" class="milliseconds">.000</span></div>
+    </div>
+
+    <!-- PANELES CRYPTO -->
+    <div class="crypto-grid">
+        
+        <!-- SLOT 1 -->
+        <div class="card" id="card-1">
+            <div class="card-header">
+                <select id="select-1" class="coin-selector"></select>
+                <div id="trend-1" class="trend-badge">...</div>
+            </div>
+            <div id="data-1" class="data-container"><div class="loader">Seleccione una moneda...</div></div>
+            <div id="satoshi-1" class="satoshi-box">
+                <div class="satoshi-title">Valor de 1 Satoshi</div>
+                <div class="satoshi-values" id="satoshi-val-1">--</div>
+            </div>
+        </div>
+
+        <!-- SLOT 2 -->
+        <div class="card" id="card-2">
+            <div class="card-header">
+                <select id="select-2" class="coin-selector"></select>
+                <div id="trend-2" class="trend-badge">...</div>
+            </div>
+            <div id="data-2" class="data-container"><div class="loader">Seleccione una moneda...</div></div>
+            <div id="satoshi-2" class="satoshi-box">
+                <div class="satoshi-title">Valor de 1 Satoshi</div>
+                <div class="satoshi-values" id="satoshi-val-2">--</div>
+            </div>
+        </div>
+
+        <!-- SLOT 3 -->
+        <div class="card" id="card-3">
+            <div class="card-header">
+                <select id="select-3" class="coin-selector"></select>
+                <div id="trend-3" class="trend-badge">...</div>
+            </div>
+            <div id="data-3" class="data-container"><div class="loader">Seleccione una moneda...</div></div>
+            <div id="satoshi-3" class="satoshi-box">
+                <div class="satoshi-title">Valor de 1 Satoshi</div>
+                <div class="satoshi-values" id="satoshi-val-3">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALCULADORA -->
+    <div class="calculator-section">
+        <div class="calc-title">Calculadora de Conversión</div>
+        <div class="calc-controls">
+            <input type="number" id="calc-input" class="calc-input" placeholder="Cantidad" step="any">
+            <select id="calc-select" class="coin-selector" style="width: auto; flex-grow: 1;"></select>
+        </div>
+        <div class="calc-results">
+            <div class="result-box">
+                <div class="res-label">EQUIVALENTE EN DÓLARES</div>
+                <div class="res-value res-usd" id="calc-res-usd">$0.00</div>
+            </div>
+            <div class="result-box">
+                <div class="res-label">EQUIVALENTE EN PESOS (ARS)</div>
+                <div class="res-value res-ars" id="calc-res-ars">$0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DE MONEDAS ---
+        // Lista de monedas soportadas comunmente por Criptoya y los exchanges argentinos.
+        // 'id' es el ID de CoinGecko para la variación de 1h.
+        const COINS_DB = [
+            { code: 'btc', name: 'Bitcoin', id: 'bitcoin' },
+            { code: 'eth', name: 'Ethereum', id: 'ethereum' },
+            { code: 'usdt', name: 'Tether (USDT)', id: 'tether' },
+            { code: 'usdc', name: 'USDC', id: 'usd-coin' },
+            { code: 'sol', name: 'Solana', id: 'solana' },
+            { code: 'dai', name: 'Dai', id: 'dai' },
+            { code: 'ada', name: 'Cardano', id: 'cardano' },
+            { code: 'matic', name: 'Polygon', id: 'matic-network' },
+            { code: 'dot', name: 'Polkadot', id: 'polkadot' },
+            { code: 'xrp', name: 'XRP', id: 'ripple' },
+            { code: 'ltc', name: 'Litecoin', id: 'litecoin' },
+            { code: 'link', name: 'Chainlink', id: 'chainlink' },
+            { code: 'doge', name: 'Dogecoin', id: 'dogecoin' },
+            { code: 'trx', name: 'Tron', id: 'tron' },
+            { code: 'avax', name: 'Avalanche', id: 'avalanche-2' },
+            { code: 'bnb', name: 'Binance Coin', id: 'binancecoin' }
+        ];
+
+        const EXCHANGES = ['binance', 'lemoncash', 'satoshitango'];
+        const EX_NAMES = { 'binance': 'Binance', 'lemoncash': 'Lemon', 'satoshitango': 'S. Tango' };
+
+        // --- 1. INICIALIZACIÓN ---
+        function init() {
+            // Llenar los Selects de los 3 Slots
+            ['select-1', 'select-2', 'select-3'].forEach((id, index) => {
+                populateSelect(id);
+                // Valores por defecto
+                const defaults = ['btc', 'eth', 'sol'];
+                document.getElementById(id).value = defaults[index];
+                
+                // Event Listener para cambiar moneda
+                document.getElementById(id).addEventListener('change', () => {
+                    updateSlot(index + 1);
+                });
+            });
+
+            // Llenar el Select de la Calculadora
+            populateSelect('calc-select');
+            document.getElementById('calc-select').value = 'btc';
+
+            // Listener Calculadora
+            document.getElementById('calc-input').addEventListener('input', runCalculator);
+            document.getElementById('calc-select').addEventListener('change', runCalculator);
+
+            // Iniciar Reloj
+            requestAnimationFrame(updateClock);
+
+            // Primera carga de datos
+            refreshAllData();
+        }
+
+        function populateSelect(elementId) {
+            const sel = document.getElementById(elementId);
+            COINS_DB.forEach(coin => {
+                const opt = document.createElement('option');
+                opt.value = coin.code;
+                opt.textContent = `${coin.name} (${coin.code.toUpperCase()})`;
+                sel.appendChild(opt);
+            });
+        }
+
+        // --- 2. RELOJ ---
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+            document.getElementById('clock').innerHTML = `${h}:${m}:${s}<span class="milliseconds">.${ms}</span>`;
+            requestAnimationFrame(updateClock);
+        }
+
+        // --- 3. CORE DE DATOS ---
+        async function refreshAllData() {
+            // 1. Obtener cotización USDT base para conversiones
+            let usdtRate = 0;
+            try {
+                const res = await fetch('https://criptoya.com/api/usdt/ars/0.1');
+                const data = await res.json();
+                usdtRate = data.lemoncash.ask || data.binance.ask;
+            } catch (e) { console.error("Error USDT rate"); return; }
+
+            // 2. Actualizar los 3 slots
+            updateSlot(1, usdtRate);
+            updateSlot(2, usdtRate);
+            updateSlot(3, usdtRate);
+
+            // 3. Ejecutar calculadora (por si cambiaron precios)
+            runCalculator(null, usdtRate);
+        }
+
+        // Función para actualizar un Slot específico
+        async function updateSlot(slotNum, preloadedUsdtRate = null) {
+            const coinCode = document.getElementById(`select-${slotNum}`).value;
+            const container = document.getElementById(`data-${slotNum}`);
+            const satoshiBox = document.getElementById(`satoshi-${slotNum}`);
+            
+            // Mostrar/Ocultar caja Satoshi
+            if (coinCode === 'btc') satoshiBox.classList.add('visible');
+            else satoshiBox.classList.remove('visible');
+
+            // Obtener USDT rate si no vino por parámetro
+            let usdtRate = preloadedUsdtRate;
+            if (!usdtRate) {
+                try {
+                    const r = await fetch('https://criptoya.com/api/usdt/ars/0.1');
+                    const d = await r.json();
+                    usdtRate = d.lemoncash.ask;
+                } catch { return; }
+            }
+
+            // Fetch Precio Criptoya
+            try {
+                const res = await fetch(`https://criptoya.com/api/${coinCode}/ars/0.1`);
+                const data = await res.json();
+                
+                let html = '';
+                let binanceArs = 0;
+
+                EXCHANGES.forEach(ex => {
+                    if (data[ex]) {
+                        const priceArs = data[ex].ask;
+                        const priceUsd = priceArs / usdtRate;
+                        if(ex === 'binance') binanceArs = priceArs;
+
+                        html += `
+                            <div class="exchange-row">
+                                <span class="exchange-name">${EX_NAMES[ex]}</span>
+                                <div class="price-group">
+                                    <div class="price-ars">$ ${new Intl.NumberFormat('es-AR').format(parseInt(priceArs))}</div>
+                                    <div class="price-usd">$ ${priceUsd.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                if (html === '') html = '<div class="loader" style="color:#f87171">No disponible en estas plataformas.</div>';
+                container.innerHTML = html;
+
+                // Update Satoshi si es BTC
+                if (coinCode === 'btc' && binanceArs > 0) {
+                    const satArs = binanceArs / 100000000;
+                    const satUsd = (binanceArs / usdtRate) / 100000000;
+                    document.getElementById(`satoshi-val-${slotNum}`).innerHTML = 
+                        `<span style="color:#4ade80">$${satUsd.toFixed(6)}</span> | <span style="color:#fff">$${satArs.toFixed(4)} ARS</span>`;
+                }
+
+                // Fetch Tendencia 1h (CoinGecko)
+                fetchTrend(slotNum, coinCode);
+
+            } catch (e) {
+                container.innerHTML = '<div class="loader">Error cargando datos.</div>';
+            }
+        }
+
+        async function fetchTrend(slotNum, coinCode) {
+            const coinData = COINS_DB.find(c => c.code === coinCode);
+            if (!coinData) return;
+            const badge = document.getElementById(`trend-${slotNum}`);
+            
+            try {
+                // Nota: CoinGecko puede limitar requests. Usamos try/catch silencioso.
+                const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinData.id}&vs_currencies=usd&include_1h_change=true`);
+                const data = await res.json();
+                
+                if (data[coinData.id]) {
+                    const change = data[coinData.id].usd_1h_change;
+                    const isPos = change >= 0;
+                    badge.className = `trend-badge ${isPos ? 'trend-up' : 'trend-down'}`;
+                    badge.innerHTML = `${isPos ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}% (1h)`;
+                }
+            } catch (e) {
+                badge.className = 'trend-badge trend-neutral';
+                badge.innerText = '-';
+            }
+        }
+
+        // --- 4. CALCULADORA ---
+        async function runCalculator(_evt, preloadedUsdtRate = null) {
+            const amount = parseFloat(document.getElementById('calc-input').value);
+            const coinCode = document.getElementById('calc-select').value;
+            
+            const resUsdEl = document.getElementById('calc-res-usd');
+            const resArsEl = document.getElementById('calc-res-ars');
+
+            if (!amount || isNaN(amount)) {
+                resUsdEl.innerText = "$0.00";
+                resArsEl.innerText = "$0.00";
+                return;
+            }
+
+            resUsdEl.innerText = "Calculando...";
+            
+            // Necesitamos la tasa USDT y el precio de la moneda seleccionada
+            try {
+                let usdtRate = preloadedUsdtRate;
+                if (!usdtRate) {
+                    const r = await fetch('https://criptoya.com/api/usdt/ars/0.1');
+                    const d = await r.json();
+                    usdtRate = d.lemoncash.ask;
+                }
+
+                const rCoin = await fetch(`https://criptoya.com/api/${coinCode}/ars/0.1`);
+                const dCoin = await rCoin.json();
+
+                // Calcular promedio ARS de los exchanges disponibles
+                let sumArs = 0;
+                let count = 0;
+                EXCHANGES.forEach(ex => {
+                    if (dCoin[ex]) {
+                        sumArs += dCoin[ex].ask;
+                        count++;
+                    }
+                });
+
+                if (count > 0) {
+                    const avgArs = sumArs / count;
+                    const avgUsd = avgArs / usdtRate;
+
+                    const totalArs = amount * avgArs;
+                    const totalUsd = amount * avgUsd;
+
+                    resUsdEl.innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalUsd);
+                    resArsEl.innerText = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(totalArs);
+                } else {
+                    resUsdEl.innerText = "No disp.";
+                    resArsEl.innerText = "No disp.";
+                }
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Loops de actualización
+        init();
+        setInterval(refreshAllData, 10000); // Refrescar todo cada 10 seg
+
+    </script>
+</body>
+</html>
